@@ -8,33 +8,47 @@ public class MyArrayList<E> implements List<E> {
     private Object[] array;
     private int currentMaxSize;
     private int size;
-    private static final int maxArraySize = Integer.MAX_VALUE - 1;
+    private static final int MAX_ARRAY_SIZE = (int) Math.pow(2, 16) - 1;
+    private static final int STARTED_MAX_SIZE = 8;
+    private static final int INCREASES_ARRAY_SIZE_VALUE = 2;
 
     MyArrayList() {
-        currentMaxSize = 10;
-        size = 0;
-        array = new Object[0];
+        initArrayList();
     }
 
     MyArrayList(Object[] array) {
         size = array.length;
-        currentMaxSize = size * 3;
+        currentMaxSize = size * INCREASES_ARRAY_SIZE_VALUE;
         this.array = Arrays.copyOf(array, currentMaxSize);
     }
 
-    private void increaseArraySize() {
+    private void initArrayList() {
+        currentMaxSize = STARTED_MAX_SIZE;
+        size = 0;
+        array = new Object[0];
+    }
+
+    private boolean tryIncreaseArraySize() {
         if (size == 0) {
             array = Arrays.copyOf(array, currentMaxSize);
-            return;
+            return true;
         }
-        if (size * 2 >= currentMaxSize) {
-            if (size * 2 < maxArraySize) {
-                currentMaxSize *= 3;
+        if (size >= MAX_ARRAY_SIZE) {
+            return false;
+        }
+        if (size < currentMaxSize) {
+            return true;
+        }
+        if (size >= currentMaxSize) {
+            if (size * INCREASES_ARRAY_SIZE_VALUE < MAX_ARRAY_SIZE) {
+                currentMaxSize *= INCREASES_ARRAY_SIZE_VALUE;
             } else {
-                currentMaxSize *= maxArraySize;
+                currentMaxSize = MAX_ARRAY_SIZE;
             }
             array = Arrays.copyOf(array, currentMaxSize);
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -59,27 +73,29 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public Iterator<E> iterator() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public void forEach(Consumer<? super E> action) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public Object[] toArray() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public <T> T[] toArray(T[] ts) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public boolean add(E e) {
-        increaseArraySize();
+        if (!tryIncreaseArraySize()) {
+            throw new IndexOutOfBoundsException("Array overflow");
+        }
         array[size] = e;
         ++size;
         return true;
@@ -87,12 +103,12 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public boolean remove(Object o) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public boolean containsAll(Collection<?> collection) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
@@ -102,60 +118,62 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public boolean addAll(int i, Collection<? extends E> collection) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public boolean retainAll(Collection<?> collection) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public void replaceAll(UnaryOperator<E> operator) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public void sort(Comparator<? super E> c) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public void clear() {
-        currentMaxSize = 10;
-        size = 0;
-        array = new Object[0];
+        initArrayList();
     }
 
     @Override
     public E get(int i) {
-        if (i > size)
-            throw new IndexOutOfBoundsException("Out of bounds");
+        if (i > size || i < 0) {
+            throw new IllegalArgumentException("Trying get out of bounds element");
+        }
         return (E) array[i];
     }
 
     @Override
     public E set(int i, E e) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public void add(int i, E e) {
-        if (i > size)
-            throw new IndexOutOfBoundsException("Out of bounds");
-        increaseArraySize();
-        for (int j = size - 1; j >= i; --j) {
-            array[j + 1] = array[j];
+        if (i > size || i < 0) {
+            throw new IllegalArgumentException("Trying put element to incorrect position");
+        }
+        if (!tryIncreaseArraySize()) {
+            throw new IndexOutOfBoundsException("Array overflow");
+        }
+        if (size - i >= 0) {
+            System.arraycopy(array, i, array, i + 1, size - i);
         }
         array[i] = e;
         ++size;
@@ -163,10 +181,14 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public E remove(int i) {
-        if (i >= size)
-            throw new IndexOutOfBoundsException("Out of bounds");
-        for (int j = i; j < size; ++j) {
-            array[j] = array[j + 1];
+        if(size == 0) {
+            throw new NullPointerException("The list is empty");
+        }
+        if (i >= size || i < 0) {
+            throw new IllegalArgumentException("Trying remove element which is out of array's bounds");
+        }
+        if (size - i >= 0) {
+            System.arraycopy(array, i + 1, array, i, size - i);
         }
         --size;
         return null;
@@ -187,41 +209,41 @@ public class MyArrayList<E> implements List<E> {
 
     @Override
     public int indexOf(Object o) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public ListIterator<E> listIterator() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public ListIterator<E> listIterator(int i) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public List<E> subList(int i, int i1) {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public Spliterator<E> spliterator() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public Stream<E> stream() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 
     @Override
     public Stream<E> parallelStream() {
-        throw new UnsupportedMethod("Unsupported operation with array");
+        throw new UnsupportedOperationException("Unsupported operation with array");
     }
 }

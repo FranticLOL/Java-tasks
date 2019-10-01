@@ -74,4 +74,12 @@ public class MyArrayListTest {
         assertEquals(expected, 1);
         assertEquals(arrayList.size(), 2);
     }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void addMaxNumberElements() {
+        List<Integer> arrayList = new MyArrayList<>();
+        for (int i = 0; i < (int) Math.pow(2, 16); ++i) {
+            arrayList.add(1);
+        }
+    }
 }
