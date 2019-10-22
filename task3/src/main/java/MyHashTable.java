@@ -15,8 +15,7 @@ class MyHashTable<K, V> {
     }
 
     private static int hash(Object key) {
-        int h;
-        return key == null ? 0 : (h = key.hashCode()) ^ h >>> 16;
+        return key == null ? 0 : key.hashCode();
     }
 
     V put(K key, V value) {
@@ -107,6 +106,9 @@ class MyHashTable<K, V> {
                 currentMaxSize = MAX_ARRAY_SIZE;
             }
             table = Arrays.copyOf(table, currentMaxSize);
+            return true;
+        }
+        if(size < currentMaxSize) {
             return true;
         }
         return false;
