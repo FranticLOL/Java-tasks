@@ -40,7 +40,25 @@ public class GoogleCalendarService {
             }
         }
         if (option.equals("2")) {
-            create();
+            List<String> eventProperties = new ArrayList<>();
+            System.out.println("Enter summary: ");
+            eventProperties.add(input.nextLine());
+            System.out.println("Enter location: ");
+            eventProperties.add(input.nextLine());
+            System.out.println("Enter description: ");
+            eventProperties.add(input.nextLine());
+            System.out.println("Enter start date time according to YY-MM-DDThh:mm:ss+3:00 : "); //"2019-11-12T02:02:02+03:00"
+            eventProperties.add(input.nextLine());
+            System.out.println("Enter end date time according to YY-MM-DDThh:mm:ss+3:00 : ");
+            eventProperties.add(input.nextLine());
+            System.out.println("Do you need reminder? y/n");
+            eventProperties.add(input.nextLine());
+            if (eventProperties.get(5).equals("y")){
+                System.out.println("Enter time of reminder executes before event: ");
+                eventProperties.add(input.nextLine());
+            }
+
+            create(eventProperties);
             return;
         }
 
@@ -49,7 +67,18 @@ public class GoogleCalendarService {
             input = new Scanner(System.in);
             String counts = input.nextLine();
             if (counts.matches("[1-9]+")) {
-                edit(Integer.parseInt(counts));
+                List<String> eventProperties = new ArrayList<>();
+                System.out.println("Enter summary: ");
+                eventProperties.add(input.nextLine());
+                System.out.println("Enter location: ");
+                eventProperties.add(input.nextLine());
+                System.out.println("Enter description: ");
+                eventProperties.add(input.nextLine());
+                System.out.println("Enter start date time according to YY-MM-DDThh:mm:ss+3:00 : "); //"2019-11-12T02:02:02+03:00"
+                eventProperties.add(input.nextLine());
+                System.out.println("Enter end date time according to YY-MM-DDThh:mm:ss+3:00 : ");
+                eventProperties.add(input.nextLine());
+                edit(Integer.parseInt(counts),eventProperties);
                 return;
             } else {
                 throw new IOException("Incorrect input. Please enter positive number.");
@@ -99,21 +128,16 @@ public class GoogleCalendarService {
         return items;
     }
 
-    public void create() throws IOException {
-        Scanner input = new Scanner(System.in);
+    public Event create(List<String> eventProperties) throws IOException {
 
         Event event = new Event();
 
+        initializeEvent(event, eventProperties);
 
-        initializeEvent(event);
-
-        System.out.println("Do you need reminder? y/n");
-        if (input.nextLine().equals("y")) {
+        if (eventProperties.get(5).equals("y")) {
             EventReminder reminder = new EventReminder();
             reminder.setMethod("email");
-            System.out.println("Enter time of reminder executes before event: ");
-            int reminderTime = input.nextInt();
-            reminder.setMinutes(reminderTime);
+            reminder.setMinutes(Integer.parseInt(eventProperties.get(6)));
 
             List<EventReminder> remindersList = new ArrayList<>();
             remindersList.add(reminder);
@@ -126,9 +150,10 @@ public class GoogleCalendarService {
         String calendarId = "primary";
         event = calendar.events().insert(calendarId, event).execute();
         System.out.printf("Event created: %s\n", event.getHtmlLink());
+        return event;
     }
 
-    private void edit(int id) throws IOException {
+    private Event edit(int id, List<String> eventProperties) throws IOException {
         DateTime now = new DateTime(System.currentTimeMillis());
         Events events = calendar.events().list("primary")
                 .setMaxResults(id + 1)
@@ -138,42 +163,46 @@ public class GoogleCalendarService {
                 .execute();
         List<Event> items = events.getItems();
 
+        Scanner input = new Scanner(System.in);
+
         Event currentEvent = items.get(id - 1);
-        initializeEvent(currentEvent);
+
+        initializeEvent(currentEvent, eventProperties);
+
         String calendarId = "primary";
         calendar.events().update(calendarId, currentEvent.getId(), currentEvent).execute();
+        return currentEvent;
     }
 
-    private void initializeEvent(Event currentEvent) {
-        Scanner input = new Scanner(System.in);
-        String inputString;
-        System.out.println("Enter summary: ");
-        if (!(inputString = input.nextLine()).equals("")) {
-            currentEvent.setSummary(inputString);
-        }
-        System.out.println("Enter location: ");
-        if (!(inputString = input.nextLine()).equals("")) {
-            currentEvent.setLocation(inputString);
-        }
-        System.out.println("Enter description: ");
-        if (!(inputString = input.nextLine()).equals("")) {
-            currentEvent.setDescription(inputString);
+    private void initializeEvent(Event currentEvent, List<String> eventProperties) {
+        if (!(eventProperties.get(0).equals(""))) {
+            currentEvent.setSummary(eventProperties.get(0));
         }
 
-        System.out.println("Enter star date time according to YY-MM-DDThh:mm:ss+3:00 : "); //"2019-11-12T02:02:02+03:00"
-        DateTime startDateTime = new DateTime(input.nextLine());
+        if (!(eventProperties.get(1).equals(""))) {
+            currentEvent.setLocation(eventProperties.get(1));
+        }
+
+        if (!(eventProperties.get(2).equals(""))) {
+            currentEvent.setDescription(eventProperties.get(2));
+        }
+
+        DateTime startDateTime = new DateTime(eventProperties.get(3));
         EventDateTime startTime = new EventDateTime()
                 .setTimeZone("Europe/Moscow")
                 .setDateTime(startDateTime);
 
-        System.out.println("Enter end date time according to YY-MM-DDThh:mm:ss+3:00 : ");
-        DateTime endDateTime = new DateTime(input.nextLine());
+        DateTime endDateTime = new DateTime(eventProperties.get(4));
         EventDateTime endTime = new EventDateTime()
                 .setTimeZone("Europe/Moscow")
                 .setDateTime(endDateTime);
         currentEvent.setStart(startTime)
                 .setEnd(endTime);
 
+    }
+
+    public Calendar getCalendar() {
+        return calendar;
     }
 
     private void delete(int id) throws IOException {
