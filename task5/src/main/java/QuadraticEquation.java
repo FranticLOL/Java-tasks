@@ -1,10 +1,8 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-
 import static java.lang.Double.valueOf;
 
-public class QuadraticEquation implements Callable<String> {
+public class QuadraticEquation implements Runnable {
     private Double a;
     private Double b;
     private Double c;
@@ -47,7 +45,13 @@ public class QuadraticEquation implements Callable<String> {
     }
 
     @Override
-    public String call() {
-        return "(" + a + ")x^2 + " + "(" + b + ")x + " + c + " = 0 :" + stringOfSolutions();
+    public String toString() {
+        return "(" + a + ")x^2 + " + "(" + b + ")x + " + c + " = 0 ";
+    }
+
+    @Override
+    public void run() {
+        System.out.println("(" + a + ")x^2 + " + "(" + b + ")x + " + c + " = 0 :" + stringOfSolutions());
+        System.out.println(Thread.currentThread().getName() + " has done a job.");
     }
 }
